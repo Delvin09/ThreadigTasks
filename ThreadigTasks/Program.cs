@@ -12,35 +12,25 @@ namespace ThreadigTasks
     abstract class ThreadProcessor<T>
     {
         private readonly T[] array;
-        private readonly Thread[] threads;
+        private readonly Task[] threads;
 
         public ThreadProcessor(T[] array, int countOfThreads)
         {
             this.array = array;
-            threads = new Thread[countOfThreads];
+            threads = new Task[countOfThreads];
         }
 
-        public void Start()
+        public async Task Start()
         {
             for (int i = 0; i < threads.Length; i++)
-            {
-                threads[i] = new Thread(Proc);
-            }
+                threads[i] = Task.Run(() => Proc(i));
 
-            for (int i = 0; i < threads.Length; i++)
-            {
-                threads[i].Start(i);
-            }
-
-            for (int i = 0; i < threads.Length; i++)
-            {
-                threads[i].Join();
-            }
+            await Task.WhenAll(threads);
+            Console.WriteLine("All task is done");
         }
 
-        protected void Proc(object state)
+        protected void Proc(int indexOfThread)
         {
-            var indexOfThread = (int)state;
             var countOfThreads = threads.Length;
 
             var countItemsForOneThread = array.Length / countOfThreads;
@@ -105,7 +95,9 @@ namespace ThreadigTasks
             var sw = new Stopwatch();
             sw.Start();
 
-            processor.Start();
+            var task = processor.Start();
+            Console.WriteLine("Threads starts!");
+            task.Wait();
 
             sw.Stop();
             Console.WriteLine(sw.Elapsed);
